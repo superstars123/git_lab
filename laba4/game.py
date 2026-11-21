@@ -1,8 +1,9 @@
 from __future__ import annotations
-from prototype import Item, Weapon, Armor, ItemCatalog, create_catalog, FIERY
+
+"""Игровой процесс, лагерь, торговец и демонстрация паттернов."""
+from prototype import Item, Weapon, Armor, ItemCatalog, create_catalog
 from abstract_factory import HERO_CLASSES, WARRIOR
 from hero import Hero
-from singleton import Dice
 from combat import BattleReport
 from factory_method import ExpeditionReport, Forest, Crypt, DragonLair, LocationRegistry
 
@@ -178,68 +179,109 @@ def play_game() -> None:
             print(f"Ошибка: {error}")
 
 
-def demonstrate_patterns() -> None:
-    catalog = create_catalog()
-    Dice().reseed(7)
+# Игровой режим 4-й лабораторной; отдельный play4.py не нужен.
+def play_lab4_game() -> None:
+    from facade import GameFacade
+    game = GameFacade()
+    print("\nЛАБОРАТОРНАЯ №4: RPG С НОВЫМИ ПАТТЕРНАМИ")
+    name = input("Имя героя: ").strip()
+    print("Выберите класс:")
+    for number, hero_class in enumerate(HERO_CLASSES, 1):
+        print(f"{number}. {hero_class.title}")
+    class_choice = input("> ").strip()
+    try:
+        selected = HERO_CLASSES[int(class_choice) - 1]
+        if int(class_choice) < 1:
+            raise IndexError
+    except (ValueError, IndexError):
+        selected = WARRIOR
+        print("Выбран класс Воин.")
+    try:
+        game.create_hero(name, selected.code)
+    except ValueError as error:
+        print(f"Ошибка создания героя: {error}")
+        return
 
-    print("===== 1. SINGLETON / ОДИНОЧКА =====")
-    first = Dice()
-    second = Dice()
-    print("Первый объект:", first)
-    print("Второй объект:", second)
-    print("Это один и тот же объект:", first is second)
+    merchant = Merchant(game.catalog)
+    while True:
+        hero = game.hero
+        assert hero is not None
+        show_hero(hero)
+        print(f"Барьер: {hero.barrier_points} | Тактика: {game.tactic.title}")
+        print("\n--- ИГРА (ЛАБА 4) ---")
+        locations = game.registry.all
+        for i, location in enumerate(locations, 1):
+            print(f"{i}. {location.title} (уровень {location.recommended_level})")
+        print("5. Лагерь и торговец")
+        print("6. Посмотреть инвентарь")
+        print("7. Сохранить героя (JSON + Proxy)")
+        print("8. Загрузить героя")
+        print("9. Выбрать тактику боя (Strategy)")
+        print("10. Достижения и журнал (Observer)")
+        print("0. Закончить игру")
+        choice = input("> ").strip()
+        try:
+            if choice in ("1", "2", "3", "4"):
+                report = game.explore(locations[int(choice) - 1].code)
+                show_expedition(report)
+                if not hero.is_alive():
+                    print("Здоровье можно восстановить в лагере.")
+            elif choice == "5":
+                camp(hero, merchant)
+            elif choice == "6":
+                show_inventory(hero)
+            elif choice == "7":
+                game.save()
+                print("Герой сохранён в saves.json (слот auto).")
+            elif choice == "8":
+                game.load()
+                print("Герой успешно загружен, включая предметы и достижения.")
+            elif choice == "9":
+                print("1. Сбалансированная  2. Агрессивная  3. Осторожная")
+                tactic_choice = {"1": "balanced", "2": "aggressive", "3": "cautious"}
+                target = tactic_choice.get(input("> ").strip())
+                if target is None:
+                    print("Неизвестный вариант тактики.")
+                else:
+                    print("Новая тактика:", game.set_tactic(target).title)
+            elif choice == "10":
+                print("\nДостижения:")
+                for achievement in sorted(game.achievements.unlocked):
+                    print(" •", achievement)
+                if not game.achievements.unlocked:
+                    print("  Пока нет.")
+                print("Журнал:")
+                for line in game.journal.entries:
+                    print(" •", line)
+                if not game.journal.entries:
+                    print("  Пока нет записей.")
+            elif choice == "0":
+                print("До встречи!")
+                return
+            else:
+                print("Неизвестная команда.")
+        except (ValueError, IndexError, KeyError, RuntimeError, OSError) as error:
+            print("Не удалось выполнить действие:", error)
 
-    print("\n===== 2. PROTOTYPE / ПРОТОТИП =====")
-    original = catalog.create_weapon("training-sword")
-    modified_copy = catalog.create_weapon("training-sword")
-    modified_copy.enchant(FIERY)
-    another_copy = catalog.create_weapon("training-sword")
-    print("Исходный шаблон-копия:", original, "| зачарования:", original.enchantment_names())
-    print("Изменённая копия:", modified_copy, "| зачарования:", modified_copy.enchantment_names())
-    print("Ещё одна копия:", another_copy, "| зачарования:", another_copy.enchantment_names())
-    print("Копии — разные объекты:", original is not modified_copy)
-    print("Изменение одной копии не затронуло другую:", original.damage == another_copy.damage)
-
-    print("\n===== 3. ABSTRACT FACTORY / АБСТРАКТНАЯ ФАБРИКА =====")
-    # У каждой фабрики два метода: создать оружие и создать броню.
-    for hero_class in HERO_CLASSES:
-        factory = hero_class.starter_kit(catalog)
-        weapon = factory.create_weapon()
-        armor = factory.create_armor()
-        print(f"Фабрика {hero_class.title} создала семейство: {weapon.name} + {armor.name}")
-
-    print("\n===== 4. BUILDER / СТРОИТЕЛЬ =====")
-    factory = WARRIOR.starter_kit(catalog)
-    hero = (Hero.Builder().set_name("Артур").set_class(WARRIOR)
-            .set_starter_kit(factory).set_level(2).set_gold(75).build())
-    print(f"Создан герой: {hero.name}; класс: {hero.hero_class.title}; уровень: {hero.level};")
-    print(f"здоровье: {hero.health}/{hero.max_health}; золото: {hero.gold};")
-    print(f"оружие: {hero.weapon}; броня: {hero.armor}")
-
-    print("\n===== 5. FACTORY METHOD / ФАБРИЧНЫЙ МЕТОД =====")
-    # Минимум два подкласса. Здесь показаны все три локации.
-    for location in (Forest(catalog), Crypt(catalog), DragonLair(catalog)):
-        enemy = location.create_enemy()
-        print(f"{location.title} создала врага: {enemy.name}; HP: {enemy.max_health}")
 
 
 def main() -> None:
     print("ЛАБОРАТОРНЫЕ РАБОТЫ №3 И №4 — ПАТТЕРНЫ ПРОЕКТИРОВАНИЯ")
-    print("1. Демонстрация паттернов (для защиты)")
+    print("1. Демонстрация паттернов лабораторной №3")
     print("2. Запустить исходную текстовую RPG (лаба 3)")
     print("3. Демонстрация семи паттернов лабораторной №4")
     print("4. Запустить RPG с новыми паттернами (лаба 4)")
+    from demo import Demo
     choice = input("> ").strip()
     if choice == "2":
         play_game()
     elif choice == "3":
-        from demo4 import demonstrate_lab4
-        demonstrate_lab4()
+        Demo.run_lab4()
     elif choice == "4":
-        from play4 import play_lab4_game
         play_lab4_game()
     else:
-        demonstrate_patterns()
+        Demo.run_lab3()
+
 
 if __name__ == "__main__":
     main()
