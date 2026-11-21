@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-"""Игровой процесс, лагерь, торговец и демонстрация паттернов."""
 from prototype import Item, Weapon, Armor, ItemCatalog, create_catalog
 from abstract_factory import HERO_CLASSES, WARRIOR
 from hero import Hero

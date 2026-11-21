@@ -26,8 +26,6 @@ class Item:
         self.enchantments: list[Enchantment] = []
 
     def copy(self) -> Item:
-        # Поверхностная копия самого предмета + отдельная копия изменяемого списка.
-        # Enchantment неизменяемый (frozen=True), поэтому его элементы можно разделять.
         clone = copy(self)
         clone.enchantments = list(self.enchantments)
         return clone

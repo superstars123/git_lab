@@ -11,7 +11,6 @@ class Dice:
         return cls._instance
 
     def reseed(self, seed: int) -> None:
-        """Устанавливает seed, чтобы можно было повторить последовательность бросков."""
         self._random.seed(seed)
 
     def next_seed(self) -> int:

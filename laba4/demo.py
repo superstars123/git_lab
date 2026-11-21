@@ -1,10 +1,4 @@
 from __future__ import annotations
-
-"""Демонстрация паттернов лабораторных №3 и №4.
-
-Класс Demo следует идее из практики преподавателя: отдельный запуск
-показывает реализацию паттернов в консоли.
-"""
 from prototype import create_catalog, FIERY
 from abstract_factory import HERO_CLASSES, WARRIOR
 from hero import Hero
@@ -13,7 +7,6 @@ from factory_method import Forest, Crypt, DragonLair
 
 
 class Demo:
-    """Выводит в консоль работу порождающих, структурных и поведенческих паттернов."""
 
     @staticmethod
     def run_lab3() -> None:
@@ -39,7 +32,6 @@ class Demo:
         print("Изменение одной копии не затронуло другую:", original.damage == another_copy.damage)
 
         print("\n===== 3. ABSTRACT FACTORY / АБСТРАКТНАЯ ФАБРИКА =====")
-        # У каждой фабрики два метода: создать оружие и создать броню.
         for hero_class in HERO_CLASSES:
             factory = hero_class.starter_kit(catalog)
             weapon = factory.create_weapon()
@@ -55,7 +47,6 @@ class Demo:
         print(f"оружие: {hero.weapon}; броня: {hero.armor}")
 
         print("\n===== 5. FACTORY METHOD / ФАБРИЧНЫЙ МЕТОД =====")
-        # Минимум два подкласса. Здесь показаны все три локации.
         for location in (Forest(catalog), Crypt(catalog), DragonLair(catalog)):
             enemy = location.create_enemy()
             print(f"{location.title} создала врага: {enemy.name}; HP: {enemy.max_health}")

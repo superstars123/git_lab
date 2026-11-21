@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-"""Lab 4 / Adapter: turn an existing Weapon into an Enemy interface."""
 from combat import Hit
 from enemies import Enemy
 from prototype import Weapon
 
 
 class HauntedWeapon(Enemy):
-    """The existing weapon provides strikes; Enemy provides health and rewards."""
 
     def __init__(self, weapon: Weapon) -> None:
         super().__init__("haunted-weapon", f"Ожившее оружие: {weapon.name}",
